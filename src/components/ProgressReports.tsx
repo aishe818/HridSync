@@ -21,10 +21,10 @@ import {
 
 interface ProgressReportsProps {
   user: User;
-  results: AssessmentResult[];
+  assessmentResults: AssessmentResult[];
 }
 
-export function ProgressReports({ user, results }: ProgressReportsProps) {
+export function ProgressReports({ user, assessmentResults }: ProgressReportsProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState('6months');
 
   const getRiskColor = (riskLevel: string) => {
@@ -46,10 +46,10 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
   };
 
   const calculateTrend = () => {
-    if (results.length < 2) return { trend: 'stable', change: 0 };
+    if (assessmentResults.length < 2) return { trend: 'stable', change: 0 };
     
-    const latest = results[results.length - 1];
-    const previous = results[results.length - 2];
+    const latest = assessmentResults[assessmentResults.length - 1];
+    const previous = assessmentResults[assessmentResults.length - 2];
     const change = latest.riskScore - previous.riskScore;
     
     if (change > 5) return { trend: 'increasing', change };
@@ -62,8 +62,8 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
     const reportData = {
       user: user.name,
       date: new Date().toLocaleDateString(),
-      assessments: results.length,
-      currentRisk: results[results.length - 1]?.riskLevel || 'Unknown',
+      assessments: assessmentResults.length,
+      currentRisk: assessmentResults[assessmentResults.length - 1]?.riskLevel || 'Unknown',
       trend: calculateTrend()
     };
     
@@ -134,7 +134,7 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
             <div className="flex items-center gap-4">
               <Heart className="w-8 h-8 text-primary" />
               <div>
-                <p className="text-2xl">{results.length}</p>
+                <p className="text-2xl">{assessmentResults.length}</p>
                 <p className="text-sm text-muted-foreground">Total Assessments</p>
               </div>
             </div>
@@ -146,8 +146,8 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
             <div className="flex items-center gap-4">
               <Target className="w-8 h-8 text-primary" />
               <div>
-                <p className={`text-2xl ${getRiskColor(results[results.length - 1]?.riskLevel || 'Unknown')}`}>
-                  {results[results.length - 1]?.riskLevel || 'N/A'}
+                <p className={`text-2xl ${getRiskColor(assessmentResults[assessmentResults.length - 1]?.riskLevel || 'Unknown')}`}>
+                  {assessmentResults[assessmentResults.length - 1]?.riskLevel || 'N/A'}
                 </p>
                 <p className="text-sm text-muted-foreground">Current Risk</p>
               </div>
@@ -181,8 +181,8 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
               <Calendar className="w-8 h-8 text-primary" />
               <div>
                 <p className="text-2xl">
-                  {results.length > 0 
-                    ? Math.ceil((Date.now() - new Date(results[0].date).getTime()) / (1000 * 60 * 60 * 24))
+                  {assessmentResults.length > 0 
+                    ? Math.ceil((Date.now() - new Date(assessmentResults[0].date).getTime()) / (1000 * 60 * 60 * 24))
                     : 0
                   }
                 </p>
@@ -210,9 +210,9 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
                 <CardTitle>Risk Level Trend</CardTitle>
               </CardHeader>
               <CardContent>
-                {results.length > 0 ? (
+                {assessmentResults.length > 0 ? (
                   <div className="space-y-4">
-                    {results.slice(-5).map((result, index) => (
+                    {assessmentResults.slice(-5).map((result, index) => (
                       <div key={result.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="text-sm text-muted-foreground">
@@ -246,10 +246,10 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
                 <CardTitle>Health Metrics Summary</CardTitle>
               </CardHeader>
               <CardContent>
-                {results.length > 0 ? (
+                {assessmentResults.length > 0 ? (
                   <div className="space-y-4">
                     {(() => {
-                      const latest = results[results.length - 1];
+                      const latest = assessmentResults[assessmentResults.length - 1];
                       return (
                         <div className="space-y-3">
                           <div className="flex justify-between items-center">
@@ -313,7 +313,7 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
                   <CheckCircle className="w-12 h-12 text-primary mx-auto mb-3" />
                   <h4 className="font-semibold">Consistency</h4>
                   <p className="text-sm text-muted-foreground">
-                    {results.length >= 3 ? 'Good' : 'Needs More Data'}
+                    {assessmentResults.length >= 3 ? 'Good' : 'Needs More Data'}
                   </p>
                 </div>
                 
@@ -321,7 +321,7 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
                   <Clock className="w-12 h-12 text-primary mx-auto mb-3" />
                   <h4 className="font-semibold">Next Assessment</h4>
                   <p className="text-sm text-muted-foreground">
-                    {results.length > 0 ? 'In 3 months' : 'Take first assessment'}
+                    {assessmentResults.length > 0 ? 'In 3 months' : 'Take first assessment'}
                   </p>
                 </div>
               </div>
@@ -336,9 +336,9 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
               <CardTitle>Assessment History</CardTitle>
             </CardHeader>
             <CardContent>
-              {results.length > 0 ? (
+              {assessmentResults.length > 0 ? (
                 <div className="space-y-4">
-                  {results.slice().reverse().map((result, index) => (
+                  {assessmentResults.slice().reverse().map((result, index) => (
                     <div key={result.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
@@ -438,7 +438,7 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
                     <div className="w-full bg-secondary rounded-full h-2">
                       <div 
                         className="bg-primary h-2 rounded-full" 
-                        style={{ width: `${Math.min(100, (150 - (results[results.length - 1]?.riskScore || 150)) / 100 * 100)}%` }}
+                        style={{ width: `${Math.min(100, (150 - (assessmentResults[assessmentResults.length - 1]?.riskScore || 150)) / 100 * 100)}%` }}
                       ></div>
                     </div>
                   </div>
@@ -452,7 +452,7 @@ export function ProgressReports({ user, results }: ProgressReportsProps) {
                     <div className="w-full bg-secondary rounded-full h-2">
                       <div 
                         className="bg-primary h-2 rounded-full" 
-                        style={{ width: `${Math.min(100, results.length * 25)}%` }}
+                        style={{ width: `${Math.min(100, assessmentResults.length * 25)}%` }}
                       ></div>
                     </div>
                   </div>

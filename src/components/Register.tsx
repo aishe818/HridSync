@@ -162,7 +162,7 @@ export function Register({ onRegister, onSwitchToLogin }: RegisterProps) {
               <Checkbox 
                 id="terms"
                 checked={agreeToTerms}
-                onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
+                onCheckedChange={(checked: boolean | 'indeterminate') => setAgreeToTerms(checked as boolean)}
               />
               <Label htmlFor="terms" className="text-sm">
                 I agree to the terms and conditions and privacy policy

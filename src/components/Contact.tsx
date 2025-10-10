@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { Mail, MessageCircle, Users, BookOpen, Send, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 export function Contact() {
   const [formData, setFormData] = useState({
@@ -46,6 +46,8 @@ export function Contact() {
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  type CategoryType = 'general' | 'academic' | 'collaboration' | 'feedback' | 'technical' | 'other';
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -160,7 +162,10 @@ export function Contact() {
 
                   <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                    <Select 
+                      value={formData.category} 
+                      onValueChange={(value: CategoryType) => handleInputChange('category', value)}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select inquiry type" />
                       </SelectTrigger>

@@ -361,7 +361,7 @@ export function HealthAssessment({ onComplete }: HealthAssessmentProps) {
                 <Checkbox 
                   id="diabetes"
                   checked={formData.diabetes}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked: boolean | 'indeterminate') => 
                     setFormData(prev => ({ ...prev, diabetes: checked as boolean }))
                   }
                 />
@@ -372,7 +372,7 @@ export function HealthAssessment({ onComplete }: HealthAssessmentProps) {
                 <Checkbox 
                   id="family-history"
                   checked={formData.familyHistory}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked: boolean | 'indeterminate') => 
                     setFormData(prev => ({ ...prev, familyHistory: checked as boolean }))
                   }
                 />
