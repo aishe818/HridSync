@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { User } from '../App';
+import { authenticate, findUserByEmail } from '../utils/auth';
 import { Eye, EyeOff, User as UserIcon, Stethoscope } from 'lucide-react';
 
 interface LoginProps {
@@ -21,20 +22,33 @@ export function Login({ onLogin, onSwitchToRegister }: LoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock authentication - in real app, this would validate credentials
-    const mockUser: User = {
-      id: '1',
-      email: email,
-      name: email.split('@')[0], // Use part before @ as name
-      userType: userType
+    // Simulate small delay for UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Try to authenticate against localStorage users (demo only)
+    const existing = findUserByEmail(email);
+    if (!existing) {
+      setIsLoading(false);
+      alert('Email not found. Please register first.');
+      return;
+    }
+
+    const auth = authenticate(email, password);
+    if (!auth) {
+      setIsLoading(false);
+      alert('Wrong password. Please try again.');
+      return;
+    }
+
+    const loggedIn: User = {
+      id: auth.id,
+      email: auth.email,
+      name: auth.name,
+      userType: auth.userType
     };
-    
+
     setIsLoading(false);
-    onLogin(mockUser);
+    onLogin(loggedIn);
   };
 
   return (

@@ -5,6 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { User } from '../App';
+import { createUser, findUserByEmail } from '../utils/auth';
 import { Eye, EyeOff, User as UserIcon, Stethoscope } from 'lucide-react';
 
 interface RegisterProps {
@@ -36,18 +37,30 @@ export function Register({ onRegister, onSwitchToLogin }: RegisterProps) {
     }
     
     setIsLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock registration - in real app, this would create account
+
+    // Prevent duplicate emails
+    const existing = findUserByEmail(email);
+    if (existing) {
+      setIsLoading(false);
+      alert('An account with this email already exists. Please sign in or use a different email.');
+      return;
+    }
+
+    // Persist user to localStorage (demo only). Passwords are base64-encoded here for minimal obfuscation.
+    const stored = createUser({
+      name,
+      email,
+      password: btoa(password),
+      userType
+    });
+
     const mockUser: User = {
-      id: Date.now().toString(),
-      email: email,
-      name: name,
-      userType: userType
+      id: stored.id,
+      email: stored.email,
+      name: stored.name,
+      userType: stored.userType
     };
-    
+
     setIsLoading(false);
     onRegister(mockUser);
   };

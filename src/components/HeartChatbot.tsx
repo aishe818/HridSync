@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -29,6 +29,7 @@ export function HeartChatbot({ riskLevel }: HeartChatbotProps) {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const heartHealthResponses = {
     // Diet related
@@ -110,18 +111,46 @@ export function HeartChatbot({ riskLevel }: HeartChatbotProps) {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
-    
-    // Simulate typing delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
-    
-    const botResponse: Message = {
+
+    // Try server-side AI first
+    try {
+      const res = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: inputValue, riskLevel })
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const reply = json.reply || json?.choices?.[0]?.message?.content || '';
+        const botResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'bot',
+          content: reply || generateResponse(inputValue),
+          timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, botResponse]);
+        setIsTyping(false);
+        return;
+      }
+
+      // If server returns an error (e.g., OpenAI not configured), fall back to local responses
+      console.warn('Chat API not available, falling back to local responses');
+    } catch (err) {
+      console.warn('Chat API call failed, falling back to local responses', err);
+    }
+
+    // Fallback: local rule-based response
+    await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 600));
+    const fallbackBotResponse: Message = {
       id: (Date.now() + 1).toString(),
       type: 'bot',
       content: generateResponse(inputValue),
       timestamp: new Date()
     };
-    
-    setMessages(prev => [...prev, botResponse]);
+
+    setMessages(prev => [...prev, fallbackBotResponse]);
     setIsTyping(false);
   };
 
@@ -132,14 +161,46 @@ export function HeartChatbot({ riskLevel }: HeartChatbotProps) {
     }
   };
 
-  useEffect(() => {
-    // Scroll to bottom when new messages are added
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+  useLayoutEffect(() => {
+    // Scroll to bottom when new messages are added.
+    // Try multiple strategies for reliability across different ScrollArea implementations.
+    const scrollToBottom = () => {
+      // 1) Prefer the ScrollArea viewport if available
+      if (scrollAreaRef.current) {
+        // Radix ScrollArea in this project marks the viewport with data-slot="scroll-area-viewport"
+        const scrollContainer = scrollAreaRef.current.querySelector('[data-slot="scroll-area-viewport"]');
+        if (scrollContainer) {
+          try {
+            // Use scrollTo for smooth behavior
+            (scrollContainer as HTMLElement).scrollTo({ top: (scrollContainer as HTMLElement).scrollHeight, behavior: 'smooth' });
+            return true;
+          } catch (e) {
+            // fallback to direct assignment
+            (scrollContainer as HTMLElement).scrollTop = (scrollContainer as HTMLElement).scrollHeight;
+            return true;
+          }
+        }
       }
-    }
+
+      // 2) Fall back to scrolling the end ref into view
+      if (messagesEndRef.current) {
+        try {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      return false;
+    };
+
+    // Run once after paint and again shortly after to handle layout updates
+    requestAnimationFrame(() => {
+      if (!scrollToBottom()) {
+        setTimeout(() => scrollToBottom(), 50);
+      }
+    });
   }, [messages]);
 
   const formatTimestamp = (date: Date) => {
@@ -200,8 +261,7 @@ export function HeartChatbot({ riskLevel }: HeartChatbotProps) {
                 )}
               </div>
             ))}
-            
-            {isTyping && (
+                {isTyping && (
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                   <Bot className="h-4 w-4 text-primary" />
@@ -215,6 +275,8 @@ export function HeartChatbot({ riskLevel }: HeartChatbotProps) {
                 </div>
               </div>
             )}
+            {/* dummy element to scroll into view (placed after typing indicator) */}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
         
