@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'; // <-- Add this import
+import { Input } from './ui/input'; // <-- Add this import
 import { User } from '../App';
 import { 
   Users, 
@@ -25,16 +25,31 @@ import {
   Crown,
   Heart,
   MessageCircle,
-  Stethoscope
+  Stethoscope,
+  DollarSign
 } from 'lucide-react';
+import ChatWindow from './ChatWindow';
+
+interface Patient {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  lastMessage: string;
+  balance: number;
+}
 
 interface AdminPanelProps {
   user: User;
+  patients?: Patient[];
+  earnings?: number;
 }
 
-export function AdminPanel({ user }: AdminPanelProps) {
+export function AdminPanel({ user, patients = [], earnings = 0 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [chatPatient, setChatPatient] = useState<Patient | null>(null);
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
 
   // Mock data for demonstration
   const stats = {
@@ -96,6 +111,18 @@ export function AdminPanel({ user }: AdminPanelProps) {
     }
   };
 
+  const handleChatClick = async (patient: Patient) => {
+    // Start or get chat session from backend
+    const res = await fetch('/api/chat/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: patient.id, nutritionistId: user.id }),
+    });
+    const data = await res.json();
+    setChatSessionId(data.sessionId);
+    setChatPatient(patient);
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
@@ -106,7 +133,7 @@ export function AdminPanel({ user }: AdminPanelProps) {
             Doctor Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Welcome, Dr. {user?.name} - Manage patients, consultations, and system overview
+            Welcome, Dr. {user?.name}! Here are your patients and account summary.
           </p>
         </div>
         
@@ -118,56 +145,68 @@ export function AdminPanel({ user }: AdminPanelProps) {
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid md:grid-cols-6 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="w-6 h-6 text-primary mx-auto mb-2" />
-            <div className="text-xl">{stats.totalUsers}</div>
-            <div className="text-xs text-muted-foreground">Total Users</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <UserCheck className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
-            <div className="text-xl">{stats.activeUsers}</div>
-            <div className="text-xs text-muted-foreground">Active Users</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Crown className="w-6 h-6 text-amber-600 mx-auto mb-2" />
-            <div className="text-xl">{stats.premiumUsers}</div>
-            <div className="text-xs text-muted-foreground">Premium Users</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Heart className="w-6 h-6 text-primary mx-auto mb-2" />
-            <div className="text-xl">{stats.totalNutritionists}</div>
-            <div className="text-xs text-muted-foreground">Nutritionists</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <MessageCircle className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <div className="text-xl">{stats.activeConsultations}</div>
-            <div className="text-xs text-muted-foreground">Active Chats</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <BarChart3 className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <div className="text-xl">${stats.monthlyRevenue}</div>
-            <div className="text-xs text-muted-foreground">Monthly Revenue</div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Earnings */}
+      <Card>
+        <CardContent className="p-6 flex items-center gap-6">
+          <DollarSign className="w-10 h-10 text-green-600" />
+          <div>
+            <div className="text-2xl font-bold">${earnings.toFixed(2)}</div>
+            <div className="text-muted-foreground">Total Earnings</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Patients Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Assigned Patients</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {patients.length === 0 ? (
+            <div className="text-muted-foreground">No patients assigned yet.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Message</TableHead>
+                  <TableHead>Balance</TableHead>
+                  <TableHead>Chat</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {patients.map((patient) => (
+                  <TableRow key={patient.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-8 h-8">
+                          <AvatarFallback>
+                            {patient.name.split(' ').map(n => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{patient.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{patient.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{patient.status}</Badge>
+                    </TableCell>
+                    <TableCell>{patient.lastMessage}</TableCell>
+                    <TableCell>${patient.balance.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="outline" onClick={() => handleChatClick(patient)}>
+                        <MessageCircle className="w-4 h-4" /> Chat
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* System Alerts */}
       <Card>
@@ -529,6 +568,16 @@ export function AdminPanel({ user }: AdminPanelProps) {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Chat Window - Rendered outside the tabs to overlay on top */}
+      {chatPatient && chatSessionId && (
+        <ChatWindow
+          sessionId={chatSessionId}
+          patient={chatPatient}
+          doctor={user}
+          onClose={() => setChatPatient(null)}
+        />
+      )}
     </div>
   );
 }

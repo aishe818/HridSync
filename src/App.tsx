@@ -31,8 +31,8 @@ export type RiskLevel = 'Low' | 'Medium' | 'High';
 
 export type User = {
   id: string;
-  email: string;
   name: string;
+  email: string;
   isPremium?: boolean;
   userType: 'user' | 'doctor';
 };

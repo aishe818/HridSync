@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import User from '../models/User';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -55,7 +56,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Check password
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
