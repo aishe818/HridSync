@@ -1,583 +1,191 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'; // <-- Add this import
-import { Input } from './ui/input'; // <-- Add this import
-import { User } from '../App';
-import { 
-  Users, 
-  UserCheck, 
-  Settings, 
-  BarChart3, 
-  Shield, 
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Search,
-  Filter,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Crown,
-  Heart,
-  MessageCircle,
-  Stethoscope,
-  DollarSign
-} from 'lucide-react';
-import ChatWindow from './ChatWindow';
+import React, { useState } from "react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "./ui/card";
+import { Button } from "./ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
+import { MessageSquare, Users, Calendar, Activity, DollarSign } from "lucide-react";
+import ChatWindow from "./ChatWindow";
 
-interface Patient {
+type Patient = {
+  id: string;
+  name: string;
+  condition: string;
+  status: string;
+  email?: string;
+};
+
+type Doctor = {
   id: string;
   name: string;
   email: string;
-  status: string;
-  lastMessage: string;
-  balance: number;
-}
+};
 
-interface AdminPanelProps {
-  user: User;
-  patients?: Patient[];
-  earnings?: number;
-}
+export default function DoctorDashboard() {
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
-export function AdminPanel({ user, patients = [], earnings = 0 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [chatPatient, setChatPatient] = useState<Patient | null>(null);
-  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
-
-  // Mock data for demonstration
-  const stats = {
-    totalUsers: 1247,
-    activeUsers: 892,
-    premiumUsers: 234,
-    totalNutritionists: 12,
-    activeConsultations: 45,
-    monthlyRevenue: 12450
+  // Mock doctor info (replace with real user info in production)
+  const doctor: Doctor = {
+    id: "doc1",
+    name: "Dr. John Doe",
+    email: "doctor@example.com",
   };
 
-  const recentUsers = [
-    { id: '1', name: 'John Smith', email: 'john@example.com', role: 'user', status: 'active', joinDate: '2024-01-15', isPremium: false },
-    { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', role: 'user', status: 'active', joinDate: '2024-01-14', isPremium: true },
-    { id: '3', name: 'Dr. Michael Chen', email: 'michael@example.com', role: 'nutritionist', status: 'active', joinDate: '2024-01-10', isPremium: false },
-    { id: '4', name: 'Emily Davis', email: 'emily@example.com', role: 'user', status: 'inactive', joinDate: '2024-01-12', isPremium: false },
-    { id: '5', name: 'Dr. Lisa Wilson', email: 'lisa@example.com', role: 'nutritionist', status: 'pending', joinDate: '2024-01-13', isPremium: false }
+  const patients: Patient[] = [
+    { id: "1", name: "Mehedi Hasan", condition: "Hypertension", status: "Active", email: "mehedi@example.com" },
+    { id: "2", name: "Aparna Chowdhury", condition: "Diabetes", status: "Active", email: "aparna@example.com" },
+    { id: "3", name: "Munira Sultana", condition: "Obesity", status: "Inactive", email: "munira@example.com" },
   ];
 
-  const nutritionists = [
-    { id: '1', name: 'Dr. Sarah Johnson', email: 'sarah@example.com', status: 'verified', specialization: 'Heart Health', consultations: 125, rating: 4.9, revenue: 2850 },
-    { id: '2', name: 'Dr. Michael Chen', email: 'michael@example.com', status: 'verified', specialization: 'Sports Nutrition', consultations: 98, rating: 4.8, revenue: 2340 },
-    { id: '3', name: 'Dr. Emily Rodriguez', email: 'emily@example.com', status: 'pending', specialization: 'Plant-based', consultations: 0, rating: 0, revenue: 0 },
-    { id: '4', name: 'Dr. James Wilson', email: 'james@example.com', status: 'verified', specialization: 'Clinical Nutrition', consultations: 156, rating: 4.9, revenue: 3720 }
+  const messages = [
+    { id: 1, patient: "Mehedi Hasan", preview: "Can I eat rice twice a day?" },
+    { id: 2, patient: "Aparna Chowdhury", preview: "Need to change my diet plan." },
   ];
 
-  const systemAlerts = [
-    { type: 'warning', message: 'High server load detected', time: '5 min ago' },
-    { type: 'info', message: 'New nutritionist application received', time: '1 hour ago' },
-    { type: 'error', message: 'Payment processing error for user #1234', time: '2 hours ago' },
-    { type: 'success', message: 'System backup completed successfully', time: '6 hours ago' }
-  ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-      case 'verified':
-        return 'bg-emerald-500';
-      case 'pending':
-        return 'bg-amber-500';
-      case 'inactive':
-      case 'rejected':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
+  const earnings = {
+    total: 12500,
+    thisMonth: 3800,
+    consultations: 32,
   };
 
-  const getAlertIcon = (type: string) => {
-    switch (type) {
-      case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-amber-500" />;
-      case 'error':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'success':
-        return <CheckCircle className="w-4 h-4 text-emerald-500" />;
-      default:
-        return <Shield className="w-4 h-4 text-blue-500" />;
-    }
+  // Simulate getting/creating a chat session ID
+  const getChatSessionId = (patient: Patient) => {
+    // In production, fetch from backend
+    return `session-${doctor.id}-${patient.id}`;
   };
 
-  const handleChatClick = async (patient: Patient) => {
-    // Start or get chat session from backend
-    const res = await fetch('/api/chat/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: patient.id, nutritionistId: user.id }),
-    });
-    const data = await res.json();
-    setChatSessionId(data.sessionId);
-    setChatPatient(patient);
+  const handleStartChat = () => {
+    setChatOpen(true);
+  };
+
+  const handleCloseChat = () => {
+    setChatOpen(false);
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
-            Doctor Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Welcome, Dr. {user?.name}! Here are your patients and account summary.
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Stethoscope className="w-3 h-3" />
-            Doctor
-          </Badge>
-        </div>
-      </div>
+    <div className="p-6">
+      <h1 className="text-3xl font-semibold mb-4">Doctor Dashboard</h1>
 
-      {/* Earnings */}
-      <Card>
-        <CardContent className="p-6 flex items-center gap-6">
-          <DollarSign className="w-10 h-10 text-green-600" />
-          <div>
-            <div className="text-2xl font-bold">${earnings.toFixed(2)}</div>
-            <div className="text-muted-foreground">Total Earnings</div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Patients Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Assigned Patients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {patients.length === 0 ? (
-            <div className="text-muted-foreground">No patients assigned yet.</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Message</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead>Chat</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {patients.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback>
-                            {patient.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{patient.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{patient.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{patient.status}</Badge>
-                    </TableCell>
-                    <TableCell>{patient.lastMessage}</TableCell>
-                    <TableCell>${patient.balance.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline" onClick={() => handleChatClick(patient)}>
-                        <MessageCircle className="w-4 h-4" /> Chat
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* System Alerts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-500" />
-            System Alerts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {systemAlerts.map((alert, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg">
-                {getAlertIcon(alert.type)}
-                <div className="flex-1">
-                  <span className="text-sm">{alert.message}</span>
-                </div>
-                <span className="text-xs text-muted-foreground">{alert.time}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs defaultValue="overview">
+        <TabsList className="grid grid-cols-4 w-full mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="nutritionists">Nutritionists</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="patients">Patients</TabsTrigger>
+          <TabsTrigger value="appointments">Appointments</TabsTrigger>
+          <TabsTrigger value="messages">Messages</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-6">
+        {/* 🩺 Overview */}
+        <TabsContent value="overview">
+          <div className="grid grid-cols-3 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Recent User Activity</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users size={18} /> Active Patients
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {recentUsers.slice(0, 5).map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {user.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium text-sm">{user.name}</div>
-                          <div className="text-xs text-muted-foreground">{user.role}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {user.isPremium && <Crown className="w-3 h-3 text-amber-500" />}
-                        <Badge 
-                          variant="secondary"
-                          className={`text-white text-xs ${getStatusColor(user.status)}`}
-                        >
-                          {user.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-2xl font-bold">{patients.length}</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Nutritionist Performance</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity size={18} /> Consultations
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {nutritionists.filter(n => n.status === 'verified').map((nutritionist) => (
-                    <div key={nutritionist.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-                      <div>
-                        <div className="font-medium text-sm">{nutritionist.name}</div>
-                        <div className="text-xs text-muted-foreground">{nutritionist.specialization}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">${nutritionist.revenue}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {nutritionist.consultations} consultations
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-2xl font-bold">{earnings.consultations}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign size={18} /> This Month’s Earnings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{earnings.thisMonth} BDT</p>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        {/* Users Tab */}
-        <TabsContent value="users" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>User Management</CardTitle>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add User
-                </Button>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                  <Input
-                    placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
+        {/* 👩‍⚕️ Patients */}
+        <TabsContent value="patients">
+          <div className="grid gap-4">
+            {patients.map((p) => (
+              <Card key={p.id} className="flex justify-between items-center p-4">
+                <div>
+                  <p className="font-semibold">{p.name}</p>
+                  <p className="text-sm text-muted-foreground">{p.condition}</p>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filter
+                <Button
+                  onClick={() => setSelectedPatient(p)}
+                  variant="secondary"
+                  size="sm"
+                >
+                  View Details
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Join Date</TableHead>
-                    <TableHead>Premium</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {user.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">{user.name}</div>
-                            <div className="text-xs text-muted-foreground">{user.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="secondary"
-                          className={`text-white text-xs ${getStatusColor(user.status)}`}
-                        >
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(user.joinDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {user.isPremium ? (
-                          <Crown className="w-4 h-4 text-amber-500" />
-                        ) : (
-                          <span className="text-muted-foreground text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {selectedPatient && (
+            <Card className="mt-6 p-4">
+              <h2 className="text-xl font-semibold mb-2">
+                {selectedPatient.name}'s Health Report
+              </h2>
+              <p>Condition: {selectedPatient.condition}</p>
+              <p>Status: {selectedPatient.status}</p>
+              <Button className="mt-3" onClick={handleStartChat}>
+                Start Chat
+              </Button>
+            </Card>
+          )}
+
+          {chatOpen && selectedPatient && (
+            <ChatWindow
+              sessionId={getChatSessionId(selectedPatient)}
+              patient={selectedPatient}
+              doctor={doctor}
+              onClose={handleCloseChat}
+            />
+          )}
+        </TabsContent>
+
+        {/* 📅 Appointments */}
+        <TabsContent value="appointments">
+          <Card className="p-4">
+            <CardTitle className="mb-3 flex items-center gap-2">
+              <Calendar size={18} /> Upcoming Appointments
+            </CardTitle>
+            <p>No upcoming appointments.</p>
           </Card>
         </TabsContent>
 
-        {/* Nutritionists Tab */}
-        <TabsContent value="nutritionists" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Nutritionist Management</CardTitle>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Nutritionist
+        {/* 💬 Messages */}
+        <TabsContent value="messages">
+          <div className="grid gap-4">
+            {messages.map((m) => (
+              <Card key={m.id} className="p-4 flex justify-between items-center">
+                <div>
+                  <p className="font-semibold">{m.patient}</p>
+                  <p className="text-sm text-muted-foreground">{m.preview}</p>
+                </div>
+                <Button size="sm" variant="secondary">
+                  <MessageSquare size={16} className="mr-2" /> Reply
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nutritionist</TableHead>
-                    <TableHead>Specialization</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Consultations</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {nutritionists.map((nutritionist) => (
-                    <TableRow key={nutritionist.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="w-8 h-8">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {nutritionist.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium text-sm">{nutritionist.name}</div>
-                            <div className="text-xs text-muted-foreground">{nutritionist.email}</div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-xs">
-                          {nutritionist.specialization}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="secondary"
-                          className={`text-white text-xs ${getStatusColor(nutritionist.status)}`}
-                        >
-                          {nutritionist.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {nutritionist.consultations}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {nutritionist.rating > 0 ? nutritionist.rating.toFixed(1) : '-'}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        ${nutritionist.revenue}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-3 h-3" />
-                          </Button>
-                          {nutritionist.status === 'pending' && (
-                            <>
-                              <Button variant="ghost" size="sm" className="text-emerald-600">
-                                <CheckCircle className="w-3 h-3" />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="text-red-600">
-                                <XCircle className="w-3 h-3" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-6">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>System Settings</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">User Registration</h4>
-                    <p className="text-sm text-muted-foreground">Allow new user registrations</p>
-                  </div>
-                  <Button variant="outline" size="sm">Enabled</Button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Premium Features</h4>
-                    <p className="text-sm text-muted-foreground">Enable premium subscriptions</p>
-                  </div>
-                  <Button variant="outline" size="sm">Enabled</Button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">AI Assistant</h4>
-                    <p className="text-sm text-muted-foreground">Enable AI chat functionality</p>
-                  </div>
-                  <Button variant="outline" size="sm">Enabled</Button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">Email Notifications</h4>
-                    <p className="text-sm text-muted-foreground">Send system notifications</p>
-                  </div>
-                  <Button variant="outline" size="sm">Enabled</Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-secondary/30 rounded-lg">
-                    <div className="text-2xl text-primary">{stats.totalUsers}</div>
-                    <div className="text-sm text-muted-foreground">Total Users</div>
-                  </div>
-                  <div className="text-center p-4 bg-secondary/30 rounded-lg">
-                    <div className="text-2xl text-primary">{stats.totalNutritionists}</div>
-                    <div className="text-sm text-muted-foreground">Nutritionists</div>
-                  </div>
-                  <div className="text-center p-4 bg-secondary/30 rounded-lg">
-                    <div className="text-2xl text-primary">98.5%</div>
-                    <div className="text-sm text-muted-foreground">Uptime</div>
-                  </div>
-                  <div className="text-center p-4 bg-secondary/30 rounded-lg">
-                    <div className="text-2xl text-primary">2.3GB</div>
-                    <div className="text-sm text-muted-foreground">Storage Used</div>
-                  </div>
-                </div>
-                
-                <Button className="w-full" variant="outline">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Advanced Settings
-                </Button>
-              </CardContent>
-            </Card>
+              </Card>
+            ))}
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Chat Window - Rendered outside the tabs to overlay on top */}
-      {chatPatient && chatSessionId && (
-        <ChatWindow
-          sessionId={chatSessionId}
-          patient={chatPatient}
-          doctor={user}
-          onClose={() => setChatPatient(null)}
-        />
-      )}
     </div>
   );
 }

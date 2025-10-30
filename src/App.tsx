@@ -11,7 +11,7 @@ import { Contact } from './components/Contact';
 import { NutritionistDirectory } from './components/NutritionistDirectory';
 import { ChatInterface } from './components/ChatInterface';
 import { ProgressReports } from './components/ProgressReports';
-import { AdminPanel } from './components/AdminPanel';
+import AdminPanel from './components/AdminPanel';
 
 export type HealthData = {
   age: number;
@@ -221,7 +221,7 @@ export default function App() {
         )}
 
         {currentPage === 'admin' && user && (
-          <AdminPanel user={user} />
+          <AdminPanel />
         )}
       </main>
     </div>

@@ -5,7 +5,7 @@ import { X } from 'lucide-react';
 
 interface ChatWindowProps {
   sessionId: string;
-  patient: { id: string; name: string; email: string };
+  patient: { id: string; name: string; email?: string };
   doctor: { id: string; name: string; email: string };
   onClose: () => void;
 }
