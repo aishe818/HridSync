@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -8,6 +8,7 @@ import {
 import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
 import { MessageSquare, Users, Calendar, Activity, DollarSign } from "lucide-react";
+import { Badge } from "./ui/badge";
 import ChatWindow from "./ChatWindow";
 
 type Patient = {
@@ -27,6 +28,14 @@ type Doctor = {
 export default function DoctorDashboard() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState<{
+    id: string;
+    patientId: string;
+    patientName: string;
+    text: string;
+    timestamp: string;
+    read: boolean;
+  }[]>([]);
 
   // Mock doctor info (replace with real user info in production)
   const doctor: Doctor = {
@@ -41,11 +50,6 @@ export default function DoctorDashboard() {
     { id: "3", name: "Munira Sultana", condition: "Obesity", status: "Inactive", email: "munira@example.com" },
   ];
 
-  const messages = [
-    { id: 1, patient: "Mehedi Hasan", preview: "Can I eat rice twice a day?" },
-    { id: 2, patient: "Aparna Chowdhury", preview: "Need to change my diet plan." },
-  ];
-
   const earnings = {
     total: 12500,
     thisMonth: 3800,
@@ -58,12 +62,57 @@ export default function DoctorDashboard() {
     return `session-${doctor.id}-${patient.id}`;
   };
 
-  const handleStartChat = () => {
+  const handleStartChat = (patient: Patient) => {
+    setSelectedPatient(patient);
     setChatOpen(true);
   };
 
   const handleCloseChat = () => {
     setChatOpen(false);
+  };
+
+  // Fetch real messages from backend
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch('/api/chat/messages', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const data = await response.json();
+        setMessages(data.messages);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    fetchMessages();
+  }, []);
+
+  // Handle reply to message
+  const handleReply = async (patientId: string, text: string) => {
+    try {
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          patientId,
+          text
+        })
+      });
+
+      if (response.ok) {
+        // Refresh messages after sending reply
+        const updatedMessages = await fetch('/api/chat/messages').then(res => res.json());
+        setMessages(updatedMessages.messages);
+      }
+    } catch (error) {
+      console.error('Error sending reply:', error);
+    }
   };
 
   return (
@@ -143,7 +192,10 @@ export default function DoctorDashboard() {
               </h2>
               <p>Condition: {selectedPatient.condition}</p>
               <p>Status: {selectedPatient.status}</p>
-              <Button className="mt-3" onClick={handleStartChat}>
+              <Button 
+                className="mt-3" 
+                onClick={() => handleStartChat(selectedPatient)}
+              >
                 Start Chat
               </Button>
             </Card>
@@ -172,17 +224,45 @@ export default function DoctorDashboard() {
         {/* 💬 Messages */}
         <TabsContent value="messages">
           <div className="grid gap-4">
-            {messages.map((m) => (
-              <Card key={m.id} className="p-4 flex justify-between items-center">
-                <div>
-                  <p className="font-semibold">{m.patient}</p>
-                  <p className="text-sm text-muted-foreground">{m.preview}</p>
-                </div>
-                <Button size="sm" variant="secondary">
-                  <MessageSquare size={16} className="mr-2" /> Reply
-                </Button>
+            {messages.length === 0 ? (
+              <Card className="p-4">
+                <p className="text-muted-foreground">No messages yet</p>
               </Card>
-            ))}
+            ) : (
+              messages.map((message) => (
+                <Card key={message.id} className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-semibold">{message.patientName}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(message.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    {!message.read && (
+                      <Badge variant="default">New</Badge>
+                    )}
+                  </div>
+                  <p className="mb-4">{message.text}</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Type your reply..."
+                      className="flex-1 px-3 py-2 border rounded-md"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value) {
+                          handleReply(message.patientId, e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <Button variant="secondary" size="sm">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Reply
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>

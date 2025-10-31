@@ -146,6 +146,19 @@ export function NutritionistDirectory({ user, onSelectNutritionist, onUpgradeToP
     onSelectNutritionist(nutritionist);
   };
 
+  const handleChatClick = (nutritionist: Nutritionist) => {
+    if (!user) {
+      // Redirect to login if no user
+      return;
+    }
+    if (!user.isPremium) {
+      // Show upgrade prompt for non-premium users
+      onUpgradeToPremium();
+      return;
+    }
+    onSelectNutritionist(nutritionist);
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}

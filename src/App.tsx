@@ -124,7 +124,7 @@ export default function App() {
       messages: []
     };
     setActiveChat(chatSession);
-    setCurrentPage('chat');
+    setCurrentPage('chat'); // This line is important
   };
 
   const handleUpgradeToPremium = () => {
