@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -27,83 +27,16 @@ interface NutritionistDirectoryProps {
 }
 
 export function NutritionistDirectory({ user, onSelectNutritionist, onUpgradeToPremium }: NutritionistDirectoryProps) {
+  const [nutritionists, setNutritionists] = useState<Nutritionist[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [sortBy, setSortBy] = useState('rating');
 
-  // Sample nutritionist data
-  const nutritionists: Nutritionist[] = [
-    {
-      id: '1',
-      name: 'Dr. Sarah Johnson',
-      email: 'sarah@example.com',
-      specialization: ['Heart Health', 'Weight Management', 'Diabetes'],
-      experience: 8,
-      rating: 4.9,
-      totalConsultations: 1250,
-      isVerified: true,
-      isOnline: true,
-      bio: 'Specialized in cardiovascular nutrition with 8+ years of experience helping patients improve heart health through personalized diet plans.',
-      qualifications: ['Registered Dietitian', 'MS in Clinical Nutrition', 'Certified Cardiac Nutritionist'],
-      hourlyRate: 85
-    },
-    {
-      id: '2',
-      name: 'Dr. Michael Chen',
-      email: 'michael@example.com',
-      specialization: ['Sports Nutrition', 'Heart Health', 'Anti-inflammatory Diet'],
-      experience: 12,
-      rating: 4.8,
-      totalConsultations: 2100,
-      isVerified: true,
-      isOnline: false,
-      bio: 'Expert in sports nutrition and heart health optimization. Helping athletes and individuals achieve peak cardiovascular health.',
-      qualifications: ['PhD in Nutritional Sciences', 'Sports Nutritionist Certification', 'Clinical Nutritionist'],
-      hourlyRate: 95
-    },
-    {
-      id: '3',
-      name: 'Dr. Emily Rodriguez',
-      email: 'emily@example.com',
-      specialization: ['Plant-based Nutrition', 'Heart Health', 'Cholesterol Management'],
-      experience: 6,
-      rating: 4.7,
-      totalConsultations: 850,
-      isVerified: true,
-      isOnline: true,
-      bio: 'Passionate about plant-based approaches to heart health. Specializes in helping clients lower cholesterol naturally.',
-      qualifications: ['Registered Dietitian', 'Plant-Based Nutrition Certificate', 'MS in Public Health'],
-      hourlyRate: 75
-    },
-    {
-      id: '4',
-      name: 'Dr. James Wilson',
-      email: 'james@example.com',
-      specialization: ['Clinical Nutrition', 'Heart Disease Prevention', 'Hypertension'],
-      experience: 15,
-      rating: 4.9,
-      totalConsultations: 3200,
-      isVerified: true,
-      isOnline: true,
-      bio: 'Leading clinical nutritionist with extensive experience in heart disease prevention and hypertension management.',
-      qualifications: ['PhD in Clinical Nutrition', 'Board Certified Nutritionist', 'Cardiovascular Health Specialist'],
-      hourlyRate: 120
-    },
-    {
-      id: '5',
-      name: 'Dr. Lisa Thompson',
-      email: 'lisa@example.com',
-      specialization: ['Therapeutic Nutrition', 'Heart Health', 'Metabolic Health'],
-      experience: 10,
-      rating: 4.6,
-      totalConsultations: 1800,
-      isVerified: true,
-      isOnline: false,
-      bio: 'Therapeutic nutrition specialist focusing on metabolic and cardiovascular health optimization through evidence-based approaches.',
-      qualifications: ['Registered Dietitian', 'Certified Nutrition Specialist', 'MS in Therapeutic Nutrition'],
-      hourlyRate: 90
-    }
-  ];
+  useEffect(() => {
+    fetch('/api/nutritionists')
+      .then(res => res.json())
+      .then(data => setNutritionists(data.nutritionists));
+  }, []);
 
   const filteredNutritionists = nutritionists
     .filter(nutritionist => 

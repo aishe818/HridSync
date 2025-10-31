@@ -1,17 +1,21 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, models, Document } from 'mongoose';
 
-export interface IChatSession extends Document {
-  user: any;
-  nutritionist: any;
-  startedAt: Date;
-  active: boolean;
+export interface IChatMessage extends Document {
+  session: any;
+  sender: 'user' | 'nutritionist' | 'system';
+  text: string;
+  createdAt: Date;
 }
 
-const ChatSessionSchema = new Schema<IChatSession>({
-  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  nutritionist: { type: Schema.Types.ObjectId, ref: 'Nutritionist', required: true },
-  startedAt: { type: Date, default: Date.now },
-  active: { type: Boolean, default: true },
+const ChatMessageSchema = new Schema<IChatMessage>({
+  session: { type: Schema.Types.ObjectId, ref: 'ChatSession', required: true },
+  sender: { type: String, enum: ['user', 'nutritionist', 'system'], required: true },
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
 });
 
-export default model<IChatSession>('ChatSession', ChatSessionSchema);
+// ✅ Safe model initialization
+const ChatMessage =
+  models.ChatMessage || model<IChatMessage>('ChatMessage', ChatMessageSchema);
+
+export default ChatMessage;
