@@ -56,9 +56,18 @@ export const sendMessage = async (req: Request, res: Response) => {
   try {
     const { sessionId } = req.params;
     const { sender, text } = req.body;
+
     const message = await ChatMessage.create({ session: sessionId, sender, text });
+
+    // Emit to Socket.IO room
+    const io = req.app.get('io');
+    if (io) {
+      io.to(sessionId).emit('message', message);
+    }
+
     res.json({ success: true, message });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: 'Send message failed' });
   }
 };

@@ -1,60 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { X } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { io } from 'socket.io-client';
 
-interface ChatWindowProps {
-  sessionId: string;
-  patient: { id: string; name: string; email?: string };
-  doctor: { id: string; name: string; email: string };
-  onClose: () => void;
-}
+const socket = io('http://localhost:5000');
 
-interface Message {
-  sender: string;
-  text: string;
-  createdAt?: string;
-}
-
-const ChatWindow: React.FC<ChatWindowProps> = ({ sessionId, patient, doctor, onClose }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+const ChatWindow = ({ sessionId, doctor }: any) => {
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`/api/chat/${sessionId}/messages`)
-      .then((res) => res.json())
-      .then((data) => setMessages(data.messages));
+    if (!sessionId) return;
+
+    socket.emit('joinRoom', sessionId);
+
+    socket.on('message', (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    return () => {
+      socket.off('message');
+      socket.disconnect();
+    };
   }, [sessionId]);
 
-  const sendMessage = async () => {
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = () => {
     if (!input.trim()) return;
-    await fetch(`/api/chat/${sessionId}/message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sender: doctor.name, text: input }),
+
+    socket.emit('sendMessage', {
+      sessionId,
+      sender: 'nutritionist',
+      text: input.trim(),
     });
-    setMessages([...messages, { sender: doctor.name, text: input }]);
+
     setInput('');
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <Card className="w-full max-w-lg shadow-lg relative">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            Chat with {patient.name}
-          </CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
-            {/* Placeholder for chat messages */}
-            Chat session #{sessionId} between Dr. {doctor.name} and {patient.name}
+    <div className="flex flex-col h-full p-4">
+      <div className="flex-1 overflow-y-auto border p-3 rounded">
+        {messages.map((m, i) => (
+          <div key={i} className={`my-2 ${m.sender === 'nutritionist' ? 'text-right' : 'text-left'}`}>
+            <span className={`inline-block px-3 py-2 rounded ${m.sender === 'nutritionist' ? 'bg-green-200' : 'bg-gray-200'}`}>
+              {m.text}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="flex mt-2">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type a reply..."
+          className="flex-1 border p-2 rounded"
+        />
+        <button onClick={sendMessage} className="ml-2 bg-green-600 text-white px-4 py-2 rounded">
+          Send
+        </button>
+      </div>
     </div>
   );
 };

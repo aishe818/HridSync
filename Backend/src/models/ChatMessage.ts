@@ -1,4 +1,17 @@
 import { Schema, model, Document } from 'mongoose';
-export interface IChatMessage extends Document { session:any; sender:string; text:string; createdAt:Date; }
-const ChatMessageSchema = new Schema<IChatMessage>({ session:{type:Schema.Types.ObjectId, ref:'ChatSession', required:true}, sender:{type:String, enum:['user','nutritionist','system'], required:true}, text:{type:String, required:true}, createdAt:{type:Date, default:Date.now} });
-export default model<IChatMessage>('ChatMessage', ChatMessageSchema);
+
+export interface IChatSession extends Document {
+  user: any;
+  nutritionist: any;
+  startedAt: Date;
+  active: boolean;
+}
+
+const ChatSessionSchema = new Schema<IChatSession>({
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  nutritionist: { type: Schema.Types.ObjectId, ref: 'Nutritionist', required: true },
+  startedAt: { type: Date, default: Date.now },
+  active: { type: Boolean, default: true },
+});
+
+export default model<IChatSession>('ChatSession', ChatSessionSchema);

@@ -9,7 +9,7 @@ import { Dashboard } from './components/Dashboard';
 import { AboutUs } from './components/AboutUs';
 import { Contact } from './components/Contact';
 import { NutritionistDirectory } from './components/NutritionistDirectory';
-import { ChatInterface } from './components/ChatInterface';
+import ChatInterface from './components/ChatInterface';
 import { ProgressReports } from './components/ProgressReports';
 import AdminPanel from './components/AdminPanel';
 
