@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000');
+const socket = io('http://localhost:5002');
 
 const ChatWindow = ({ sessionId, doctor }: any) => {
   const [input, setInput] = useState('');
@@ -18,8 +18,7 @@ const ChatWindow = ({ sessionId, doctor }: any) => {
     });
 
     return () => {
-      socket.off('message');
-      socket.disconnect();
+      socket.off('message'); // Only remove the listener, don't disconnect
     };
   }, [sessionId]);
 
